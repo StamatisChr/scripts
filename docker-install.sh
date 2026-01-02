@@ -1,7 +1,5 @@
 #!/bin/bash
 set -euo pipefail
-LOG_FILE="/var/log/docker-install.log"
-exec > >(tee -a "$LOG_FILE") 2>&1
 
 sudo apt remove $(dpkg --get-selections docker.io docker-compose docker-compose-v2 docker-doc podman-docker containerd runc | cut -f1) 
 sudo apt update
