@@ -16,4 +16,6 @@ Signed-By: /etc/apt/keyrings/docker.asc
 EOF
 
 sudo apt update
-sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+VERSION_STRING=(apt list --all-versions docker-ce | grep docker-ce | head -1 | awk '{print $2}')
+echo "Installing Docker version: $VERSION_STRING"
+sudo apt install -y docker-ce=$VERSION_STRING docker-ce-cli=$VERSION_STRING containerd.io docker-buildx-plugin docker-compose-plugin
