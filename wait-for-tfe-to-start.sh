@@ -15,20 +15,21 @@ tfe_version() {
 
 if [[ "$tfe_version_image" != v* ]] && tfe_version "$tfe_version_image" "2.0.0"; then
     health_url="https://${tfe_hostname}/api/v1/health/readiness"
-    use_status_check=true
+    while true; do
+        body="$(curl -fsS "$health_url" 2>/dev/null || true)"
+        if echo "$body" | jq -e '.status == "OK"' >/dev/null 2>&1; then
+            break
+        fi
+        pending="$(echo "$body" | jq -r '[.checks[]? | select(.status != "OK") | .check] | join(", ")' 2>/dev/null || true)"
+        echo "$(date +"%Y-%m-%d %H:%M:%S") Waiting for TFE...${pending:+ pending: $pending}"
+        sleep 20
+    done
 else
     health_url="https://${tfe_hostname}/_health_check"
-    use_status_check=false
+    while [[ "$(curl -fsS "$health_url" 2>/dev/null || true)" != "OK" ]]; do
+        echo "$(date +"%Y-%m-%d %H:%M:%S") Waiting for TFE to start..."
+        sleep 20
+    done
 fi
-
-while true; do
-    if $use_status_check; then
-        curl -fsS -o /dev/null "$health_url" && break
-    else
-        [[ "$(curl -fsS "$health_url" || true)" == "OK" ]] && break
-    fi
-    echo "$(date +"%Y-%m-%d %H:%M:%S") Waiting for TFE to start..."
-    sleep 20
-done
 
 echo "$(date +"%Y-%m-%d %H:%M:%S") TFE is up."
